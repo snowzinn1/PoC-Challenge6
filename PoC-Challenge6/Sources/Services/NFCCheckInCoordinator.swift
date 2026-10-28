@@ -1,5 +1,13 @@
-import SwiftUI
+//
+//  NFCCheckInCoordinator.swift
+//  PoC-Challenge6
+//
+//  Created by Guilherme Alves de Souza on 28/10/26.
+//
 
+
+import SwiftUI
+import Combine
 /// Maestro do fluxo: etiqueta -> servidor -> Face ID -> registro.
 /// Cada etapa é um Step, que a tela (CheckInOverlay) usa para se desenhar.
 @MainActor

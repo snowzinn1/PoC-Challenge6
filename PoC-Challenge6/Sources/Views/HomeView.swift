@@ -1,3 +1,11 @@
+//
+//  HomeView.swift
+//  MyApp
+//
+//  Created by Guilherme Alves de Souza on 28/10/26.
+//
+
+
 import SwiftUI
 
 struct HomeView: View {
@@ -75,7 +83,8 @@ struct HomeView: View {
 }
 
 #Preview {
+    let store = AttendanceStore()
     HomeView()
         .environmentObject(AttendanceStore())
-        .environmentObject(NFCCheckInCoordinator())
+        .environmentObject(NFCCheckInCoordinator(store: store))
 }

@@ -1,5 +1,12 @@
-import SwiftUI
+//
+//  AttendanceStore.swift
+//  PoC-Challenge6
+//
+//  Created by Guilherme Alves de Souza on 28/10/26.
+//
 
+import SwiftUI
+import Combine
 /// Estado de presença exibido na tela. Fala com o "servidor" apenas via CheckInRepository.
 @MainActor
 final class AttendanceStore: ObservableObject {
