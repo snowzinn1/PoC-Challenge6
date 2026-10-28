@@ -1,6 +1,6 @@
 //
 //  HomeView.swift
-//  MyApp
+// HomeView
 //
 //  Created by Guilherme Alves de Souza on 28/10/26.
 //
