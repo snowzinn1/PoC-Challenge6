@@ -4,9 +4,6 @@
 //
 //  Created by Guilherme Alves de Souza on 28/10/26.
 //
-
-
-
     import CoreNFC
 
     /// Lê uma etiqueta NDEF de texto com Core NFC.
