@@ -5,18 +5,19 @@
 //  Created by Guilherme Alves de Souza on 28/10/26.
 //
 
-
 import Foundation
 
 /// Fronteira entre a PoC e o "servidor".
 /// Na PoC usamos o MockCheckInRepository (dados locais).
 /// No STEMP real, basta uma segunda implementação que chame o WebService:
-///   - hasCheckedInToday()  -> WebService.fetchCalendar
-///   - registerPresence()   -> RegistrationViewModel.registerEvent / WebService.postRecord
+///   - hasCheckedInToday()   -> WebService.fetchCalendar
+///   - registerPresence(...) -> RegistrationViewModel.registerEvent (status presente)
+///   - registerAbsence(...)  -> RegistrationViewModel.registerEvent (falta + justificativa)
 protocol CheckInRepository {
     /// nil = não foi possível saber (ex.: sem rede)
     func hasCheckedInToday() async -> Bool?
-    func registerPresence(tagID: String) async throws -> CheckInRecord
+    func registerPresence(origin: CheckInRecord.Origin, tagID: String?, outsideAcademy: Bool) async throws -> CheckInRecord
+    func registerAbsence(date: Date, reason: String) async throws -> CheckInRecord
     func history() async -> [CheckInRecord]
     /// Apenas para testes da PoC
     func reset() async
@@ -24,22 +25,33 @@ protocol CheckInRepository {
 
 /// Simula o servidor guardando os registros localmente, com um pequeno atraso de rede.
 final class MockCheckInRepository: CheckInRepository {
-    private let key = "poc.checkin.records"
+    private let key = "poc.checkin.records.v2"
     private let latency: Duration = .milliseconds(700)
 
     func hasCheckedInToday() async -> Bool? {
         try? await Task.sleep(for: latency)
-        return load().contains { Calendar.current.isDateInToday($0.date) }
+        return load().contains { $0.kind == .presence && Calendar.current.isDateInToday($0.date) }
     }
 
-    func registerPresence(tagID: String) async throws -> CheckInRecord {
+    func registerPresence(origin: CheckInRecord.Origin, tagID: String?, outsideAcademy: Bool) async throws -> CheckInRecord {
         try? await Task.sleep(for: latency)
-        let record = CheckInRecord(id: UUID(), date: Date(), tagID: tagID)
+        let record = CheckInRecord(id: UUID(), date: Date(), kind: .presence,
+                                   origin: origin, tagID: tagID, outsideAcademy: outsideAcademy)
         save([record] + load())
         return record
     }
 
-    func history() async -> [CheckInRecord] { load() }
+    func registerAbsence(date: Date, reason: String) async throws -> CheckInRecord {
+        try? await Task.sleep(for: latency)
+        let record = CheckInRecord(id: UUID(), date: Calendar.current.startOfDay(for: date),
+                                   kind: .absence, justification: reason)
+        save([record] + load())
+        return record
+    }
+
+    func history() async -> [CheckInRecord] {
+        load().sorted { $0.date > $1.date }
+    }
 
     func reset() async { UserDefaults.standard.removeObject(forKey: key) }
 
