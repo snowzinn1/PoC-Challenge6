@@ -113,21 +113,7 @@ struct HomeView: View {
                     .foregroundStyle(.orange)
             }
  
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(store.weekDays) { day in
-                        Button {
-                            if day.canJustify { absenceTarget = AbsenceTarget(date: day.date) }
-                        } label: {
-                            DayCard(day: day)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!day.canJustify)
-                    }
-                }
-                .padding(14)
-            }
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 24))
+            WeeklyAttendanceView(store: store)
  
             Text("Toque em um dia com falta (ou em hoje) para justificar.")
                 .font(.caption)
@@ -135,7 +121,10 @@ struct HomeView: View {
         }
     }
 }
- 
-//#Preview {
-//    HomeView(store: <#T##AttendanceStore#>, coordinator: <#T##NFCCheckInCoordinator#>, showAllRecords: <#T##arg#>, absenceTarget: <#T##AbsenceTarget?#>, simulateOutside: <#T##arg#>)
-//}
+
+#Preview("HomeView Preview") {
+    let store = AttendanceStore()
+    return HomeView()
+        .environmentObject(store)
+        .environmentObject(NFCCheckInCoordinator(store: store))
+}
