@@ -9,16 +9,9 @@ import SwiftUI
 import UIKit
 
 /// Cobre a tela durante as etapas do registro (a folha do NFC e o Face ID são do sistema).
-/// Mostra progresso, a confirmação de "fora da academy", o check animado de sucesso (com vibração) ou o erro.
+/// Mostra progresso, a confirmação de "fora da academy", o card de sucesso (com confetes e vibração) ou o erro.
 struct CheckInOverlay: View {
     @ObservedObject var coordinator: NFCCheckInCoordinator
-
-    private enum Display {
-        case progress(String)
-        case confirmOutside
-        case success(title: String, detail: String?)
-        case failure(String)
-    }
 
     private var display: Display? {
         switch coordinator.step {
@@ -28,11 +21,12 @@ struct CheckInOverlay: View {
         case .validatingLocation:       return .progress("Verificando sua localização…")
         case .confirmingOutsideAcademy: return .confirmOutside
         case .registering:              return .progress("Registrando presença…")
-        case .success(let date):
+        case .success:
             return .success(title: "Ponto registrado",
-                            detail: date.formatted(date: .omitted, time: .shortened))
+                            message: "Agora vai trabalhar!",
+                            celebrate: true)
         case .absenceSent:
-            return .success(title: "Falta justificada", detail: nil)
+            return .success(title: "Falta justificada", message: nil, celebrate: false)
         case .failed(let message):      return .failure(message)
         }
     }
@@ -67,10 +61,10 @@ struct CheckInOverlay: View {
                 Button("Cancelar") { coordinator.confirmOutsideAcademy(false) }
                     .buttonStyle(.bordered)
 
-            case .success(let title, let detail):
-                SuccessMark()
-                Text(title).font(.title3.bold())
-                if let detail { Text(detail).foregroundStyle(.secondary) }
+            case .success(let title, let message, let celebrate):
+                CheckInSuccessContent(title: title, message: message, celebrate: celebrate) {
+                    coordinator.dismiss()
+                }
 
             case .failure(let message):
                 Image(systemName: "xmark.circle.fill")
@@ -85,32 +79,14 @@ struct CheckInOverlay: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28))
     }
 
-    private func react(to step: NFCCheckInCoordinator.Step) async {
+    private func react(to step: Step) async {
         switch step {
         case .success, .absenceSent:
             UINotificationFeedbackGenerator().notificationOccurred(.success)
-            try? await Task.sleep(for: .seconds(2.2))
-            if !Task.isCancelled { coordinator.dismiss() }
         case .failed:
             UINotificationFeedbackGenerator().notificationOccurred(.error)
         default:
             break
         }
-    }
-}
-
-private struct SuccessMark: View {
-    @State private var appeared = false
-
-    var body: some View {
-        Image(systemName: "checkmark.circle.fill")
-            .font(.system(size: 84))
-            .foregroundStyle(.green)
-            .scaleEffect(appeared ? 1 : 0.4)
-            .opacity(appeared ? 1 : 0)
-            .symbolEffect(.bounce, value: appeared)
-            .onAppear {
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) { appeared = true }
-            }
     }
 }
