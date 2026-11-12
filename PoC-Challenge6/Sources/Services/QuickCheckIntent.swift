@@ -22,6 +22,7 @@ struct QuickCheckInIntent: AppIntent {
     static let openAppWhenRun: Bool = false
     static let authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
+
     @Parameter(title: "Local da etiqueta", default: "sala-01")
     var localID: String
 

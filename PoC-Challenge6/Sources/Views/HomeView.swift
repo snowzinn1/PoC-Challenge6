@@ -6,54 +6,69 @@
 //
 
 import SwiftUI
- 
+
 /// Tela "Bate o ponto" (design dark/light via cores semânticas).
 struct HomeView: View {
     @EnvironmentObject var store: AttendanceStore
     @EnvironmentObject var coordinator: NFCCheckInCoordinator
- 
-    @State private var showAllRecords = false
+
+    @State private var showOverview = false
     @State private var absenceTarget: AbsenceTarget?
- 
+
+    private let eventRepository: EventRepository = MockEventRepository()
+    private let checkInRepository: CheckInRepository = MockCheckInRepository()
+
     // PoC: simula o beacon (no STEMP real vem do BeaconManager)
     @AppStorage(MockPresenceValidator.simulateOutsideKey) private var simulateOutside = false
- 
+
     struct AbsenceTarget: Identifiable {
         let date: Date
         var id: Date { date }
     }
- 
+
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: Date())
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 20) {
+                
                 header
-                statusBlock
- 
-                PresenceSlider(
-                    isLocked: store.todayPresence != nil,
-                    lockedText: lockedText,
-                    onComplete: { await coordinator.runSliderCheckIn() }
-                )
- 
-                Text("Para bater o ponto **use o slider** ou **segure o Action Button do iPhone** para disparar o atalho.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
- 
-                recordsSection
+                Spacer()
+
+                monthSection
+                Spacer()
+
+                
+                TodayEventsSection(repository: eventRepository)
+
+                Spacer()
+                VStack(spacing: 16) {
+                    nfcButton
+
+                    PresenceSlider(
+                        isLocked: store.todayPresence != nil,
+                        lockedText: "Ponto de hoje registrado!",
+                        onComplete: { await coordinator.runSliderCheckIn() }
+                    )
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 40)
         }
         .background(Color(.systemBackground))
-        .sheet(isPresented: $showAllRecords) { AllRecordsView() }
+        .navigationDestination(isPresented: $showOverview) {
+            AttendanceOverviewView(year: currentYear, repository: checkInRepository)
+        }
         .sheet(item: $absenceTarget) { target in
             JustifyAbsenceSheet(date: target.date)
         }
     }
- 
+
     // MARK: - Partes
- 
+
     private var header: some View {
         HStack {
             Text("Bate o ponto")
@@ -66,65 +81,68 @@ struct HomeView: View {
                     Task { await store.debugReset() }
                 }
             } label: {
-                Image(systemName: "ellipsis.circle").font(.title3).foregroundStyle(.secondary)
+                Image(systemName: "ellipsis.circle")
+                    .font(.title)
+                    .foregroundStyle(.secondary)
             }
         }
     }
- 
-    private var statusBlock: some View {
-        VStack(spacing: 18) {
-            if let presence = store.todayPresence {
-                Image(systemName: "clock.badge.checkmark")
-                    .font(.system(size: 120))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.green)
-                Text("Ponto batido às \(presence.date.formatted(date: .omitted, time: .shortened))")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            } else {
-                Image(systemName: "clock.badge.exclamationmark")
-                    .font(.system(size: 120))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.gray)
-                Text("Você ainda não bateu o ponto.")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: 260)
-            }
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-        .padding(.top, 8)
+
+    private var monthName: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "pt_BR")
+        f.dateFormat = "LLLL"
+        return f.string(from: Date()).capitalized
     }
- 
-    private var lockedText: String {
-        if let presence = store.todayPresence {
-            return "Presença registrada às \(presence.date.formatted(date: .omitted, time: .shortened))"
-        }
-        return "Presença registrada"
-    }
- 
-    private var recordsSection: some View {
+
+    private var monthSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Registros").font(.title.bold())
+                Text(monthName)
+                    .font(.title3)
                 Spacer()
-                Button("Ver tudo") { showAllRecords = true }
-                    .foregroundStyle(.orange)
+                Button {
+                    showOverview = true
+                } label: {
+                    Text("ver mais")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
             }
- 
+
             WeeklyAttendanceView(store: store)
- 
-            Text("Toque em um dia com falta (ou em hoje) para justificar.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
+    }
+
+    private var nfcButton: some View {
+        Button {
+            coordinator.startNFC()
+        } label: {
+            HStack {
+                Text("Habilitar registro com NFC")
+                    .font(.body)
+                Spacer()
+                Image(systemName: "dot.radiowaves.right")
+                    .font(.system(size: 26, weight: .semibold))
+            }
+            .foregroundStyle(Color.blue)
+            .padding(.horizontal, 24)
+            .frame(height: 52)
+            .overlay(
+                Capsule().stroke(Color.blue, lineWidth: 1.5)
+            )
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview("HomeView Preview") {
     let store = AttendanceStore()
-    return HomeView()
-        .environmentObject(store)
-        .environmentObject(NFCCheckInCoordinator(store: store))
+    return NavigationStack {
+        HomeView()
+    }
+    .environmentObject(store)
+    .environmentObject(NFCCheckInCoordinator(store: store))
 }

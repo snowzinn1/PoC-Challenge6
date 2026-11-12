@@ -11,8 +11,7 @@ import SwiftUI
 // MARK: - Cálculo dos dias do mês
 
 enum MonthAttendance {
-    static func days(of month: Date, records: [CheckInRecord], weekdaysOnly: Bool,
-                     calendar: Calendar = .current, today: Date = Date()) -> [DayStatus] {
+    static func days(of month: Date, records: [CheckInRecord], weekdaysOnly: Bool,calendar: Calendar = .current, today: Date = Date()) -> [DayStatus] {
 
         guard let range = calendar.range(of: .day, in: .month, for: month),
               let start = calendar.date(from: calendar.dateComponents([.year, .month], from: month))
@@ -120,8 +119,9 @@ struct MonthAttendanceCard: View {
                     DayDot(status: status, size: dot)
                 }
             }
-            .padding(.top, edge)
-            .padding(.trailing, edge)
+            .padding(.top, w * 0.09)
+            .padding(.trailing, w * -0.5)  //GAMBIARRA
+            // Margem direita menor (mais perto da borda)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
             // Nome do mês: canto inferior esquerdo
