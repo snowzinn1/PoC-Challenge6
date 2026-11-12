@@ -6,7 +6,6 @@
 //
 
 
-
 import LocalAuthentication
 
 /// Face ID (biometria). Devolve false se o aparelho não puder usar biometria

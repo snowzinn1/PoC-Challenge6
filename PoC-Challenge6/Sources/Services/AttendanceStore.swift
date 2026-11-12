@@ -10,13 +10,7 @@ import Combine
 
 /// Um dia da semana exibido nos cards de "Registros".
 struct DayCell: Identifiable, Equatable {
-    enum State: Equatable {
-        case present(Date)               // bateu o ponto (horário)
-        case absent(justified: Bool)     // falta (justificada ou não)
-        case today                       // hoje, ainda sem registro
-        case future                      // dia que ainda não chegou
-    }
-
+    
     let date: Date
     let state: State
     var id: Date { date }
@@ -61,7 +55,7 @@ final class AttendanceStore: ObservableObject {
             guard let day = cal.date(byAdding: .day, value: offset, to: weekStart) else { return nil }
             let entries = records.filter { cal.isDate($0.date, inSameDayAs: day) }
 
-            let state: DayCell.State
+            let state: State
             if let presence = entries.first(where: { $0.kind == .presence }) {
                 state = .present(presence.date)
             } else if entries.contains(where: { $0.kind == .absence }) {

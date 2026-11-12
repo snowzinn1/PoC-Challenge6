@@ -18,19 +18,6 @@ import Combine
 @MainActor
 final class NFCCheckInCoordinator: ObservableObject {
 
-    enum Step: Equatable {
-        case idle
-        case reading                    // folha do NFC (do sistema)
-        case checkingServer
-        case authenticating             // Face ID (do sistema)
-        case validatingLocation
-        case confirmingOutsideAcademy   // aguardando decisão do aluno
-        case registering
-        case success(Date)
-        case absenceSent
-        case failed(String)
-    }
-
     /// Formato gravado nas etiquetas: "stemp:checkin:<local>"  (ex.: stemp:checkin:sala-01)
     static let tagPrefix = "stemp:checkin:"
 
@@ -162,4 +149,6 @@ final class NFCCheckInCoordinator: ObservableObject {
             return false
         }
     }
+    
+    
 }

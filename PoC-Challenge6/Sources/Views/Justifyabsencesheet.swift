@@ -14,14 +14,6 @@ struct JustifyAbsenceSheet: View {
     @EnvironmentObject var coordinator: NFCCheckInCoordinator
     @Environment(\.dismiss) private var dismiss
 
-    enum Reason: String, CaseIterable, Identifiable {
-        case health = "Saúde"
-        case personal = "Compromisso pessoal"
-        case transport = "Transporte"
-        case other = "Outro"
-        var id: String { rawValue }
-    }
-
     @State private var reason: Reason = .health
     @State private var details = ""
     @State private var isSending = false
